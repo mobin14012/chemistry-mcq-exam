@@ -84,6 +84,35 @@ let startStamp = 0;
 let submitted = false;
 let lastResult = null;
 
+/* ---------- Official first-result storage (localStorage) ----------
+   Rule: only the FIRST attempt per (set + student name) is saved.
+   Later attempts are practice: allowed unlimited, but never overwrite. */
+const STORE_KEY = "ssc_ch10_official_v1";
+function normName(n){ return (n||"").trim().toLowerCase() || "anonymous"; }
+function displayName(n){ const t=(n||"").trim(); return t || "নাম ছাড়া"; }
+function loadStore(){
+  try { return JSON.parse(localStorage.getItem(STORE_KEY) || "{}"); }
+  catch(e){ return {}; }
+}
+function officialKey(setNo, name){ return "set"+setNo+"__"+normName(name); }
+function getOfficial(setNo, name){
+  const s = loadStore();
+  return s[officialKey(setNo, name)] || null;
+}
+function getAllOfficials(){
+  const s = loadStore();
+  return Object.values(s).sort((a,b)=> new Date(b.date)-new Date(a.date));
+}
+function saveOfficialIfFirst(setNo, name, rec){
+  const s = loadStore();
+  const k = officialKey(setNo, name);
+  if(s[k]) return { saved:false, official:s[k] };
+  s[k] = rec;
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch(e){}
+  return { saved:true, official:rec };
+}
+function currentInputName(){ const el=$("studentName"); return el ? el.value : ""; }
+
 const $ = id => document.getElementById(id);
 const homeScreen=$("homeScreen"), examScreen=$("examScreen"), resultScreen=$("resultScreen");
 const timerBox=$("timerBox"), timerText=$("timerText"), progressBar=$("progressBar"), progressFill=$("progressFill");
@@ -95,16 +124,59 @@ function show(screen){
 }
 
 document.querySelectorAll("[data-start]").forEach(btn=>{
-  btn.addEventListener("click", ()=> startExam(parseInt(btn.dataset.start,10)));
+  btn.addEventListener("click", ()=>{
+    const setNo = parseInt(btn.dataset.start,10);
+    const nm = currentInputName();
+    const off = getOfficial(setNo, nm);
+    if(off){
+      if(!confirm("⚠️ "+displayName(nm)+" — সেট–"+toBn(setNo)+" এর official ফলাফল আগেই সেভ আছে ("+toBn(off.correct)+"/"+toBn(TOTAL_Q)+")।\n\nএবার দিলে সেটা PRACTICE হবে — ফলাফল সেভ হবে না।\nPractice শুরু করবে?")) return;
+    } else if(!nm.trim()){
+      if(!confirm("নাম লেখোনি। নাম ছাড়া দিলে official result \"নাম ছাড়া\" হিসেবে সেভ হবে।\nচালিয়ে যাবে?")) return;
+    } else {
+      if(!confirm(displayName(nm)+" — সেট–"+toBn(setNo)+" প্রথমবার দিচ্ছো। এটাই OFFICIAL হিসেবে সেভ হবে।\nশুরু করবে?")) return;
+    }
+    startExam(setNo);
+  });
 });
 $("backBtn").addEventListener("click", ()=>{ if(confirm("পরীক্ষা ছেড়ে হোমে যাবে? উত্তরগুলো মুছে যাবে।")) stopAndHome(); });
 $("submitBtn").addEventListener("click", ()=>{ if(confirm("জমা দিতে চাও? এরপর উত্তর বদলানো যাবে না।")) finishExam(false); });
 $("retryBtn").addEventListener("click", ()=> startExam(currentSet));
 $("homeBtn").addEventListener("click", ()=> stopAndHome());
 
+const _nameInput = $("studentName");
+if(_nameInput){
+  const savedName = localStorage.getItem("ssc_ch10_name") || "";
+  if(savedName) _nameInput.value = savedName;
+  _nameInput.addEventListener("input", ()=>{
+    try{ localStorage.setItem("ssc_ch10_name", _nameInput.value); }catch(e){}
+    refreshOfficialNotes();
+  });
+  _nameInput.addEventListener("change", refreshOfficialNotes);
+}
+
+function refreshOfficialNotes(){
+  const nm = currentInputName();
+  [1,2].forEach(s=>{
+    const el = $("officialNote"+s);
+    if(!el) return;
+    const off = getOfficial(s, nm);
+    if(off){
+      const d = new Date(off.date);
+      const ds = isNaN(d) ? "" : " • "+d.toLocaleDateString("bn-BD");
+      el.innerHTML = "✅ official সেভ আছে: <b>"+toBn(off.correct)+"/"+toBn(TOTAL_Q)+"</b> ("+toBn(off.pct)+"%)"+ds+" — আবার দিলে practice হবে";
+      el.classList.add("done");
+    } else {
+      el.textContent = "📌 official result: এখনো দাওনি — প্রথমবার দিলে সেভ হবে";
+      el.classList.remove("done");
+    }
+  });
+}
+
 function stopAndHome(){
   clearInterval(timerId);
   timerBox.classList.add("hidden"); progressBar.classList.add("hidden");
+  refreshOfficialNotes();
+  renderAdminTable();
   show(homeScreen);
 }
 
@@ -190,7 +262,16 @@ function finishExam(auto){
   const usedSec = Math.round((Date.now()-startStamp)/1000);
   const {correct, wrong, skip, rows} = grade();
   const pct = Math.round(correct/TOTAL_Q*100);
-  lastResult = {correct, wrong, skip, rows, pct, usedSec, auto};
+  const rawName = currentInputName();
+  const name = displayName(rawName);
+  // Official rule: save ONLY first attempt. Never overwrite.
+  const rec = { set: currentSet, name, correct, wrong, skip, pct, usedSec, auto: !!auto,
+                date: new Date().toISOString() };
+  const { saved, official } = saveOfficialIfFirst(currentSet, rawName, rec);
+  lastResult = {correct, wrong, skip, rows, pct, usedSec, auto,
+                isPractice: !saved, official, savedThisTime: saved, student: name};
+  refreshOfficialNotes();
+  renderAdminTable();
   renderResult(auto);
   show(resultScreen);
 }
@@ -205,19 +286,41 @@ function gradeText(pct){
 }
 
 function renderResult(auto){
-  const {correct, wrong, skip, pct, usedSec} = lastResult;
-  const name = $("studentName").value.trim();
+  const {correct, wrong, skip, pct, usedSec, isPractice, official, student} = lastResult;
+  // Result section ALWAYS shows the official first result (per user request),
+  // while the just-finished attempt is shown as practice if it is a retake.
+  const shown = isPractice ? official : lastResult;
+  const sCorrect = shown.correct, sWrong = shown.wrong, sSkip = shown.skip,
+        sPct = shown.pct, sUsed = shown.usedSec;
   $("resultTitle").textContent = "📊 সেট–"+toBn(currentSet)+" ফলাফল"+(auto?" (সময় শেষ — অটো জমা)":"");
-  $("resultName").textContent = name ? name+"-এর পরীক্ষা • "+toBn(TOTAL_Q)+"টি প্রশ্ন • ৩৫ মিনিট" : toBn(TOTAL_Q)+"টি প্রশ্ন • ৩৫ মিনিটের পরীক্ষা";
-  $("statCorrect").textContent = toBn(correct);
-  $("statWrong").textContent = toBn(wrong);
-  $("statSkip").textContent = toBn(skip);
-  const mm = Math.floor(usedSec/60), ss = usedSec%60;
+  $("resultName").textContent = student+"-এর পরীক্ষা • "+toBn(TOTAL_Q)+"টি প্রশ্ন • ৩৫ মিনিট";
+  $("attemptLabel").textContent = isPractice
+    ? "🔁 এটি PRACTICE ছিল — সেভ হয়নি। নিচে তোমার FIRST (official) ফলাফল দেখানো হচ্ছে।"
+    : "✅ এটি তোমার FIRST attempt — official হিসেবে সেভ হয়েছে।";
+  const banner = $("saveBanner");
+  if(isPractice){
+    banner.className = "save-banner practice";
+    const od = new Date(official.date);
+    const ods = isNaN(od) ? "" : od.toLocaleString("bn-BD");
+    banner.innerHTML = "🔁 <b>Practice mode:</b> এবারের স্কোর <b>"+toBn(correct)+"/"+toBn(TOTAL_Q)+" ("+toBn(pct)+"%)</b> — সেভ হয়নি।<br>📌 <b>Official first result:</b> "+toBn(official.correct)+"/"+toBn(TOTAL_Q)+" ("+toBn(official.pct)+"%) • "+ods+" — এটাই admin দেখবে।";
+  } else {
+    banner.className = "save-banner official";
+    banner.innerHTML = "✅ <b>Official result সেভ হয়েছে:</b> "+toBn(correct)+"/"+toBn(TOTAL_Q)+" ("+toBn(pct)+"%)। এরপর যতবার দাও, সেগুলো practice হবে — official বদলাবে না।";
+  }
+  const obox = $("officialBox");
+  obox.classList.remove("hidden");
+  const od2 = new Date(shown.date || Date.now());
+  const ods2 = (shown.date && !isNaN(od2)) ? od2.toLocaleString("bn-BD") : "এইমাত্র";
+  obox.innerHTML = "<b>📌 Official first result (result section):</b> "+student+" • সেট–"+toBn(currentSet)+" • <b>"+toBn(sCorrect)+"/"+toBn(TOTAL_Q)+"</b> ("+toBn(sPct)+"%) • ভুল "+toBn(sWrong)+" • বাদ "+toBn(sSkip)+" • "+ods2;
+  $("statCorrect").textContent = toBn(sCorrect);
+  $("statWrong").textContent = toBn(sWrong);
+  $("statSkip").textContent = toBn(sSkip);
+  const mm = Math.floor(sUsed/60), ss = sUsed%60;
   $("statTime").textContent = toBn(mm)+":"+toBn(String(ss).padStart(2,"0"));
-  $("scorePct").textContent = toBn(pct)+"%";
-  $("scoreGrade").textContent = gradeText(pct)+" ("+toBn(correct)+"/"+toBn(TOTAL_Q)+")";
+  $("scorePct").textContent = toBn(sPct)+"%";
+  $("scoreGrade").textContent = gradeText(sPct)+" ("+toBn(sCorrect)+"/"+toBn(TOTAL_Q)+")";
   const ring = document.querySelector(".score-ring");
-  ring.style.background = `conic-gradient(${pct>=60?"#16a34a":pct>=40?"#d97706":"#dc2626"} ${pct}%, #e2e8f0 ${pct}%)`;
+  ring.style.background = `conic-gradient(${sPct>=60?"#16a34a":sPct>=40?"#d97706":"#dc2626"} ${sPct}%, #e2e8f0 ${sPct}%)`;
   renderReview("all");
   document.querySelectorAll("#filterRow .chip").forEach(c=>{
     c.classList.toggle("active", c.dataset.filter==="all");
@@ -261,3 +364,43 @@ function renderReview(filter){
     });
   if(!box.children.length) box.innerHTML = `<p class="muted">এই ফিল্টারে কোনো প্রশ্ন নেই।</p>`;
 }
+
+/* ---------- Admin: view saved FIRST results on this device ---------- */
+function renderAdminTable(){
+  const tb = $("adminTableBody");
+  if(!tb) return;
+  const rows = getAllOfficials();
+  if(!rows.length){ tb.innerHTML = `<tr><td colspan="5" class="muted">এখনো কোনো official result নেই।</td></tr>`; return; }
+  tb.innerHTML = rows.map(r=>{
+    const d = new Date(r.date);
+    const ds = isNaN(d) ? "-" : d.toLocaleDateString("bn-BD")+" "+d.toLocaleTimeString("bn-BD",{hour:"2-digit",minute:"2-digit"});
+    return `<tr><td>${escapeHtml(r.name)}</td><td>সেট–${toBn(r.set)}</td><td>${toBn(r.correct)}/${toBn(TOTAL_Q)}</td><td>${toBn(r.pct)}%</td><td class="muted small">${ds}</td></tr>`;
+  }).join("");
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+const _refreshAdminBtn = $("refreshAdminBtn");
+if(_refreshAdminBtn) _refreshAdminBtn.addEventListener("click", ()=>{ refreshOfficialNotes(); renderAdminTable(); });
+const _exportBtn = $("exportCsvBtn");
+if(_exportBtn) _exportBtn.addEventListener("click", ()=>{
+  const rows = getAllOfficials();
+  if(!rows.length){ alert("এখনো কোনো official result নেই।"); return; }
+  const head = "name,set,correct,wrong,skip,pct,used_sec,date\n";
+  const body = rows.map(r=> [ '"'+String(r.name).replace(/"/g,'""')+'"', r.set, r.correct, r.wrong, r.skip, r.pct, r.usedSec, r.date ].join(",")).join("\n");
+  const blob = new Blob(["\uFEFF"+head+body], {type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "official-first-results.csv";
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+});
+const _clearBtn = $("clearOfficialBtn");
+if(_clearBtn) _clearBtn.addEventListener("click", ()=>{
+  if(!confirm("সব official first result মুছে যাবে। Admin ছাড়া এটা কোরো না। নিশ্চিত?")) return;
+  localStorage.removeItem(STORE_KEY);
+  refreshOfficialNotes(); renderAdminTable();
+});
+
+// init home state
+refreshOfficialNotes();
+renderAdminTable();

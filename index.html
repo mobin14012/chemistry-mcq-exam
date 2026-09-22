@@ -39,9 +39,10 @@
         <span>✅ সহজ ১০</span><span>⚡ ট্রিকি ১০</span><span>🔥 কঠিন ১০</span><span>⏱ ৩৫ মিনিট</span>
       </div>
       <label class="name-row">
-        <span>পরীক্ষার্থীর নাম (ঐচ্ছিক)</span>
+        <span>পরীক্ষার্থীর নাম (official result-এর জন্য নাম লেখো)</span>
         <input id="studentName" type="text" placeholder="তোমার নাম লেখো" autocomplete="name" maxlength="40">
       </label>
+      <p class="muted small" style="margin:8px 2px 0">📌 নিয়ম: প্রতিটি সেটের <b>প্রথমবারের ফলাফলই official</b> হিসেবে সেভ হবে। পরে যতবার খুশি practice করতে পারবে, কিন্তু official ফলাফল বদলাবে না। Result-এ সবসময় প্রথমবারের official ফলাফল দেখাবে।</p>
     </div>
 
     <div class="set-grid">
@@ -50,6 +51,7 @@
         <h3>সেট–১: ভিত্তি + প্রয়োগ</h3>
         <p class="muted">আগ্নেয় শিলা, আকরিক, ঘনীকরণ, নিষ্কাশন, সংকর, মরিচা, সালফার ও H₂SO₄</p>
         <div class="set-meta"><span>সহজ ১–১০</span><span>ট্রিকি ১১–২০</span><span>কঠিন ২১–৩০</span></div>
+        <div id="officialNote1" class="official-note">📌 official result: এখনো দাওনি</div>
         <button class="btn primary" data-start="1">▶ সেট–১ শুরু করো</button>
       </article>
       <article class="set-card">
@@ -57,6 +59,7 @@
         <h3>সেট–২: ধারণা + হিসাব</h3>
         <p class="muted">শিলার প্রকার, খনিজ-গ্যাং, ক্যালসিনেশন বনাম রোস্টিং, ক্যারেট হিসাব, কন্টাক্ট পদ্ধতি</p>
         <div class="set-meta"><span>সহজ ১–১০</span><span>ট্রিকি ১১–২০</span><span>কঠিন ২১–৩০</span></div>
+        <div id="officialNote2" class="official-note">📌 official result: এখনো দাওনি</div>
         <button class="btn primary" data-start="2">▶ সেট–২ শুরু করো</button>
       </article>
     </div>
@@ -67,8 +70,24 @@
         <li>প্রতিটি সেটে <b>৩০টি প্রশ্ন, ৩৫ মিনিট</b>। প্রতিটি প্রশ্নের মান ১।</li>
         <li>একটি প্রশ্নের <b>একটিই সঠিক উত্তর</b>। উত্তর না দিলে সেটি “বাদ পড়া” ধরা হবে।</li>
         <li>সময় শেষ হলে <b>অটো-সাবমিট</b> হবে। মাঝপথে “জমা দাও” চাপলেও রেজাল্ট দেখাবে।</li>
+        <li>⚠️ <b>শুধু প্রথমবারের ফলাফল সেভ হবে (official)।</b> এরপর যতবার দাও সেটা practice — practice-এর ফলাফল সেভ হবে না, result-এ প্রথমবারের official ফলাফলই দেখাবে।</li>
         <li>রেজাল্টে <b>মোট সঠিক, ভুল, বাদ, শতকরা হার ও গ্রেড</b> + প্রতিটি প্রশ্নের সঠিক উত্তর ও সংক্ষিপ্ত ব্যাখ্যা পাবে।</li>
       </ul>
+    </div>
+
+    <div class="info-box admin-box">
+      <h4>👩‍🏫 Admin — Saved first results (এই ডিভাইসে)</h4>
+      <p class="muted small">এই ব্রাউজারে যারা পরীক্ষা দিয়েছে, তাদের <b>শুধু প্রথমবারের official ফলাফল</b> এখানে থাকবে। Practice-এর ফলাফল এখানে সেভ হয় না।</p>
+      <div class="admin-actions">
+        <button id="refreshAdminBtn" class="btn ghost small-btn">🔄 তালিকা দেখো</button>
+        <button id="exportCsvBtn" class="btn ghost small-btn">⬇ CSV ডাউনলোড</button>
+        <button id="clearOfficialBtn" class="btn ghost small-btn danger-text">🗑 সব মুছো</button>
+      </div>
+      <div class="table-wrap"><table class="admin-table">
+        <thead><tr><th>নাম</th><th>সেট</th><th>সঠিক</th><th>%</th><th>তারিখ</th></tr></thead>
+        <tbody id="adminTableBody"><tr><td colspan="5" class="muted">এখনো কোনো official result নেই।</td></tr></tbody>
+      </table></div>
+      <p class="muted small">ℹ️ GitHub Pages static সাইট, তাই official result প্রতিটি ছাত্রের <b>নিজের ব্রাউজারে</b> সেভ থাকে। সব ছাত্রের ফলাফল এক জায়গায় (তোমার কাছে)自动 জমা করতে চাইলে Google Sheet / Firebase ব্যাকএন্ড লাগবে — চাইলে আমি যোগ করে দেবো।</p>
     </div>
   </section>
 
@@ -88,9 +107,12 @@
 
   <!-- RESULT -->
   <section id="resultScreen" class="screen">
+    <div id="saveBanner" class="save-banner"></div>
+    <div id="officialBox" class="official-box hidden"></div>
     <div class="result-card">
       <h2 id="resultTitle">📊 ফলাফল</h2>
       <p id="resultName" class="muted"></p>
+      <p id="attemptLabel" class="attempt-label"></p>
       <div class="score-ring">
         <div id="scorePct" class="score-pct">০%</div>
         <div id="scoreGrade" class="score-grade">—</div>
