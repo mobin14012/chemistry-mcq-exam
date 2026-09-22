@@ -115,6 +115,11 @@ h1,h2,h3{font-family:"Noto Serif Bengali","Hind Siliguri",sans-serif;line-height
 .admin-table{width:100%;border-collapse:collapse;font-size:13px;min-width:420px}
 .admin-table th,.admin-table td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
 .admin-table thead th{background:#f1f5f9;font-size:12px}
+.online-status{font-size:12px;font-weight:600;color:#64748b;background:#f1f5f9;border-radius:999px;padding:3px 10px;white-space:nowrap}
+.online-status.ok{background:#dcfce7;color:#166534}
+.online-status.bad{background:#fee2e2;color:#991b1b}
+.admin-details{margin-top:10px;border-top:1px dashed #cbd5e1;padding-top:8px}
+.admin-details summary{cursor:pointer;font-weight:700;font-size:14px}
 /* Mobile */
 @media(max-width:640px){
   .set-grid{grid-template-columns:1fr}

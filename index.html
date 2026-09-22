@@ -76,18 +76,29 @@
     </div>
 
     <div class="info-box admin-box">
-      <h4>👩‍🏫 Admin — Saved first results (এই ডিভাইসে)</h4>
-      <p class="muted small">এই ব্রাউজারে যারা পরীক্ষা দিয়েছে, তাদের <b>শুধু প্রথমবারের official ফলাফল</b> এখানে থাকবে। Practice-এর ফলাফল এখানে সেভ হয় না।</p>
+      <h4>👩‍🏫 Admin — Online first results (সব ডিভাইস) <span id="onlineStatus" class="online-status"></span></h4>
+      <p class="muted small">ছাত্ররা যেকোনো ডিভাইস থেকে পরীক্ষা দিলে <b>শুধু প্রথমবারের official ফলাফল</b> Google Sheet-এ জমা হবে। Practice-এর ফলাফল সেভ হয় না। তুমি তোমার ফোন/ল্যাপটপ থেকে এখানেই সবার রেজাল্ট দেখবে।</p>
       <div class="admin-actions">
-        <button id="refreshAdminBtn" class="btn ghost small-btn">🔄 তালিকা দেখো</button>
-        <button id="exportCsvBtn" class="btn ghost small-btn">⬇ CSV ডাউনলোড</button>
-        <button id="clearOfficialBtn" class="btn ghost small-btn danger-text">🗑 সব মুছো</button>
+        <button id="refreshOnlineBtn" class="btn ghost small-btn">🌐 Online তালিকা লোড</button>
+        <button id="exportOnlineBtn" class="btn ghost small-btn">⬇ Online CSV</button>
       </div>
       <div class="table-wrap"><table class="admin-table">
         <thead><tr><th>নাম</th><th>সেট</th><th>সঠিক</th><th>%</th><th>তারিখ</th></tr></thead>
-        <tbody id="adminTableBody"><tr><td colspan="5" class="muted">এখনো কোনো official result নেই।</td></tr></tbody>
+        <tbody id="onlineTableBody"><tr><td colspan="5" class="muted">⏳ লোড হচ্ছে…</td></tr></tbody>
       </table></div>
-      <p class="muted small">ℹ️ GitHub Pages static সাইট, তাই official result প্রতিটি ছাত্রের <b>নিজের ব্রাউজারে</b> সেভ থাকে। সব ছাত্রের ফলাফল এক জায়গায় (তোমার কাছে) স্বয়ংক্রিয়ভাবে জমা করতে চাইলে Google Sheet / Firebase ব্যাকএন্ড লাগবে — চাইলে আমি যোগ করে দেবো।</p>
+      <details class="admin-details">
+        <summary>📱 এই ডিভাইসে সেভ থাকা results + সেটআপ</summary>
+        <div class="admin-actions">
+          <button id="refreshAdminBtn" class="btn ghost small-btn">🔄 এই ডিভাইসের তালিকা</button>
+          <button id="exportCsvBtn" class="btn ghost small-btn">⬇ Device CSV</button>
+          <button id="clearOfficialBtn" class="btn ghost small-btn danger-text">🗑 Device মুছো</button>
+        </div>
+        <div class="table-wrap"><table class="admin-table">
+          <thead><tr><th>নাম</th><th>সেট</th><th>সঠিক</th><th>%</th><th>তারিখ</th></tr></thead>
+          <tbody id="adminTableBody"><tr><td colspan="5" class="muted">এখনো কোনো official result নেই।</td></tr></tbody>
+        </table></div>
+        <p class="muted small">⚙️ Online চালু করতে: <b>BACKEND-SETUP-BN.md</b> ফাইল দেখো (৫ মিনিট: Google Sheet + Apps Script URL)। URL বসানোর পর সব ডিভাইসের result উপরের Online টেবিলে আসবে।</p>
+      </details>
     </div>
   </section>
 

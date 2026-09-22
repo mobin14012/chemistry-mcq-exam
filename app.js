@@ -87,6 +87,11 @@ let lastResult = null;
 /* ---------- Official first-result storage (localStorage) ----------
    Rule: only the FIRST attempt per (set + student name) is saved.
    Later attempts are practice: allowed unlimited, but never overwrite. */
+/* ===== Cloud backend (Google Sheet via Apps Script) =====
+   Admin: BACKEND-SETUP-BN.md দেখে Apps Script URL বসাও।
+   URL বসানোর পর সব ডিভাইসের first result অনলাইনে সেভ হবে,
+   admin অন্য ডিভাইস থেকেও সব রেজাল্ট দেখতে পারবে। */
+const BACKEND_URL = "";
 const STORE_KEY = "ssc_ch10_official_v1";
 function normName(n){ return (n||"").trim().toLowerCase() || "anonymous"; }
 function displayName(n){ const t=(n||"").trim(); return t || "নাম ছাড়া"; }
@@ -109,7 +114,29 @@ function saveOfficialIfFirst(setNo, name, rec){
   if(s[k]) return { saved:false, official:s[k] };
   s[k] = rec;
   try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch(e){}
+  // also push to cloud (first result only) — never overwrite rule enforced server-side too
+  saveOfficialOnline(rec);
   return { saved:true, official:rec };
+}
+function backendReady(){ return typeof BACKEND_URL === "string" && BACKEND_URL.indexOf("https://") === 0; }
+function saveOfficialOnline(rec){
+  if(!backendReady()) return;
+  try {
+    fetch(BACKEND_URL, {
+      method: "POST", mode: "no-cors",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({ action: "save", set: rec.set, name: rec.name,
+        correct: rec.correct, wrong: rec.wrong, skip: rec.skip,
+        pct: rec.pct, usedSec: rec.usedSec, date: rec.date })
+    }).catch(()=>{});
+  } catch(e){}
+}
+async function loadOnlineOfficials(){
+  if(!backendReady()) throw new Error("no-backend");
+  const res = await fetch(BACKEND_URL + (BACKEND_URL.indexOf("?")>=0 ? "&" : "?") + "action=list", { method: "GET" });
+  if(!res.ok) throw new Error("http-"+res.status);
+  const data = await res.json();
+  return Array.isArray(data.rows) ? data.rows : [];
 }
 function currentInputName(){ const el=$("studentName"); return el ? el.value : ""; }
 
@@ -365,7 +392,43 @@ function renderReview(filter){
   if(!box.children.length) box.innerHTML = `<p class="muted">এই ফিল্টারে কোনো প্রশ্ন নেই।</p>`;
 }
 
-/* ---------- Admin: view saved FIRST results on this device ---------- */
+/* ---------- Admin: view saved FIRST results (this device + online) ---------- */
+function onlineStatusEl(){ return $("onlineStatus"); }
+function setOnlineStatus(msg, ok){
+  const el = onlineStatusEl();
+  if(!el) return;
+  el.textContent = msg;
+  el.className = "online-status " + (ok === true ? "ok" : ok === false ? "bad" : "");
+}
+async function renderOnlineTable(){
+  const tb = $("onlineTableBody");
+  if(!tb) return;
+  if(!backendReady()){
+    tb.innerHTML = `<tr><td colspan="5" class="muted">⚠️ Online backend এখনো সেট করা হয়নি। BACKEND-SETUP-BN.md দেখে Google Sheet URL বসাও — তারপর সব ডিভাইসের result এখানে আসবে।</td></tr>`;
+    setOnlineStatus("● offline — URL সেট হয়নি");
+    return;
+  }
+  tb.innerHTML = `<tr><td colspan="5" class="muted">⏳ লোড হচ্ছে…</td></tr>`;
+  setOnlineStatus("● লোড হচ্ছে…");
+  try {
+    const rows = await loadOnlineOfficials();
+    if(!rows.length){
+      tb.innerHTML = `<tr><td colspan="5" class="muted">এখনো কোনো online result নেই। ছাত্ররা পরীক্ষা দিলে এখানে জমা হবে।</td></tr>`;
+      setOnlineStatus("● online ready — ০টি রেজাল্ট", true);
+      return;
+    }
+    rows.sort((a,b)=> new Date(b.date)-new Date(a.date));
+    tb.innerHTML = rows.map(r=>{
+      const d = new Date(r.date);
+      const ds = isNaN(d) ? "-" : d.toLocaleDateString("bn-BD")+" "+d.toLocaleTimeString("bn-BD",{hour:"2-digit",minute:"2-digit"});
+      return `<tr><td>${escapeHtml(r.name||"")}</td><td>সেট–${toBn(r.set||"")}</td><td>${toBn(r.correct||0)}/${toBn(TOTAL_Q)}</td><td>${toBn(r.pct||0)}%</td><td class="muted small">${ds}</td></tr>`;
+    }).join("");
+    setOnlineStatus("● online — "+toBn(rows.length)+"টি first result", true);
+  } catch(e){
+    tb.innerHTML = `<tr><td colspan="5" class="muted">❌ Online লোড ব্যর্থ। ইন্টারনেট / Apps Script deploy চেক করো।</td></tr>`;
+    setOnlineStatus("● online error", false);
+  }
+}
 function renderAdminTable(){
   const tb = $("adminTableBody");
   if(!tb) return;
@@ -380,7 +443,24 @@ function renderAdminTable(){
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
 const _refreshAdminBtn = $("refreshAdminBtn");
-if(_refreshAdminBtn) _refreshAdminBtn.addEventListener("click", ()=>{ refreshOfficialNotes(); renderAdminTable(); });
+if(_refreshAdminBtn) _refreshAdminBtn.addEventListener("click", ()=>{ refreshOfficialNotes(); renderAdminTable(); renderOnlineTable(); });
+const _refreshOnlineBtn = $("refreshOnlineBtn");
+if(_refreshOnlineBtn) _refreshOnlineBtn.addEventListener("click", renderOnlineTable);
+const _exportOnlineBtn = $("exportOnlineBtn");
+if(_exportOnlineBtn) _exportOnlineBtn.addEventListener("click", async ()=>{
+  try {
+    const rows = await loadOnlineOfficials();
+    if(!rows.length){ alert("Online-এ এখনো কোনো result নেই।"); return; }
+    const head = "name,set,correct,wrong,skip,pct,used_sec,date\n";
+    const body = rows.map(r=> [ '"'+String(r.name||"").replace(/"/g,'""')+'"', r.set, r.correct, r.wrong, r.skip, r.pct, r.usedSec||"", r.date ].join(",")).join("\n");
+    const blob = new Blob(["\uFEFF"+head+body], {type:"text/csv;charset=utf-8"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "online-first-results.csv";
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+  } catch(e){ alert("Online CSV ব্যর্থ — backend সেট আছে কি না দেখো।"); }
+});
 const _exportBtn = $("exportCsvBtn");
 if(_exportBtn) _exportBtn.addEventListener("click", ()=>{
   const rows = getAllOfficials();
@@ -404,3 +484,4 @@ if(_clearBtn) _clearBtn.addEventListener("click", ()=>{
 // init home state
 refreshOfficialNotes();
 renderAdminTable();
+renderOnlineTable();
