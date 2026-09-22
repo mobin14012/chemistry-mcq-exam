@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>SSC রসায়ন অধ্যায় ১০ — MCQ পরীক্ষা | খনিজ সম্পদ: ধাতু-অধাতু</title>
+<meta name="description" content="SSC Chemistry Chapter 10 — ২ সেট MCQ পরীক্ষা, প্রতিটি সেট ৩০টি প্রশ্ন, ৩৫ মিনিট টাইমার, অটো রেজাল্ট ও ব্যাখ্যাসহ। মোবাইল অপটিমাইজড।">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="brand-badge">SSC</span>
+      <div>
+        <h1>রসায়ন অধ্যায় ১০ — MCQ টেস্ট</h1>
+        <p>খনিজ সম্পদ: ধাতু-অধাতু • ২ সেট × ৩০টি প্রশ্ন</p>
+      </div>
+    </div>
+    <div id="timerBox" class="timer hidden" aria-live="polite">
+      <span class="timer-label">⏱ সময়</span>
+      <span id="timerText">৩৫:০০</span>
+    </div>
+  </div>
+  <div id="progressBar" class="progress hidden"><div id="progressFill"></div></div>
+</header>
+
+<main class="container">
+
+  <!-- HOME -->
+  <section id="homeScreen" class="screen active">
+    <div class="hero">
+      <h2>🎯 ৩৫ মিনিটে ৩০টি MCQ — নিজেকে যাচাই করো</h2>
+      <p>প্রথমে শুধু প্রশ্ন দেখে পরীক্ষা দাও। সময় শেষ হলে বা সাবমিট করলে <b>সঠিক / ভুল সংখ্যা, স্কোর ও প্রতিটি প্রশ্নের উত্তর-ব্যাখ্যা</b> দেখাবে।</p>
+      <div class="chips">
+        <span>✅ সহজ ১০</span><span>⚡ ট্রিকি ১০</span><span>🔥 কঠিন ১০</span><span>⏱ ৩৫ মিনিট</span>
+      </div>
+      <label class="name-row">
+        <span>পরীক্ষার্থীর নাম (ঐচ্ছিক)</span>
+        <input id="studentName" type="text" placeholder="তোমার নাম লেখো" autocomplete="name" maxlength="40">
+      </label>
+    </div>
+
+    <div class="set-grid">
+      <article class="set-card">
+        <div class="set-head"><span class="set-tag">সেট–১</span><span class="set-count">৩০টি MCQ</span></div>
+        <h3>সেট–১: ভিত্তি + প্রয়োগ</h3>
+        <p class="muted">আগ্নেয় শিলা, আকরিক, ঘনীকরণ, নিষ্কাশন, সংকর, মরিচা, সালফার ও H₂SO₄</p>
+        <div class="set-meta"><span>সহজ ১–১০</span><span>ট্রিকি ১১–২০</span><span>কঠিন ২১–৩০</span></div>
+        <button class="btn primary" data-start="1">▶ সেট–১ শুরু করো</button>
+      </article>
+      <article class="set-card">
+        <div class="set-head"><span class="set-tag alt">সেট–২</span><span class="set-count">৩০টি MCQ</span></div>
+        <h3>সেট–২: ধারণা + হিসাব</h3>
+        <p class="muted">শিলার প্রকার, খনিজ-গ্যাং, ক্যালসিনেশন বনাম রোস্টিং, ক্যারেট হিসাব, কন্টাক্ট পদ্ধতি</p>
+        <div class="set-meta"><span>সহজ ১–১০</span><span>ট্রিকি ১১–২০</span><span>কঠিন ২১–৩০</span></div>
+        <button class="btn primary" data-start="2">▶ সেট–২ শুরু করো</button>
+      </article>
+    </div>
+
+    <div class="info-box">
+      <h4>📋 নিয়ম</h4>
+      <ul>
+        <li>প্রতিটি সেটে <b>৩০টি প্রশ্ন, ৩৫ মিনিট</b>। প্রতিটি প্রশ্নের মান ১।</li>
+        <li>একটি প্রশ্নের <b>একটিই সঠিক উত্তর</b>। উত্তর না দিলে সেটি “বাদ পড়া” ধরা হবে।</li>
+        <li>সময় শেষ হলে <b>অটো-সাবমিট</b> হবে। মাঝপথে “জমা দাও” চাপলেও রেজাল্ট দেখাবে।</li>
+        <li>রেজাল্টে <b>মোট সঠিক, ভুল, বাদ, শতকরা হার ও গ্রেড</b> + প্রতিটি প্রশ্নের সঠিক উত্তর ও সংক্ষিপ্ত ব্যাখ্যা পাবে।</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- EXAM -->
+  <section id="examScreen" class="screen">
+    <div class="exam-head">
+      <button id="backBtn" class="btn ghost">← হোম</button>
+      <h2 id="examTitle">সেট–১</h2>
+      <span id="answeredCount" class="answered">০ / ৩০ উত্তর</span>
+    </div>
+    <div id="questionList" class="q-list"></div>
+    <div class="submit-bar">
+      <button id="submitBtn" class="btn success big">✅ জমা দাও ও রেজাল্ট দেখো</button>
+      <p class="muted small">সময় শেষ হলে স্বয়ংক্রিয়ভাবে জমা হবে।</p>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="resultScreen" class="screen">
+    <div class="result-card">
+      <h2 id="resultTitle">📊 ফলাফল</h2>
+      <p id="resultName" class="muted"></p>
+      <div class="score-ring">
+        <div id="scorePct" class="score-pct">০%</div>
+        <div id="scoreGrade" class="score-grade">—</div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat ok"><span id="statCorrect" class="num">০</span><span>সঠিক ✅</span></div>
+        <div class="stat bad"><span id="statWrong" class="num">০</span><span>ভুল ❌</span></div>
+        <div class="stat skip"><span id="statSkip" class="num">০</span><span>বাদ ⏭</span></div>
+        <div class="stat time"><span id="statTime" class="num">০:০০</span><span>ব্যবহৃত সময়</span></div>
+      </div>
+      <div class="result-actions">
+        <button id="retryBtn" class="btn primary">🔁 আবার দাও</button>
+        <button id="homeBtn" class="btn ghost">🏠 অন্য সেট</button>
+      </div>
+    </div>
+    <h3 class="review-head">📝 উত্তরপত্র ও ব্যাখ্যা</h3>
+    <div id="filterRow" class="filter-row">
+      <button class="chip active" data-filter="all">সবগুলো</button>
+      <button class="chip" data-filter="correct">সঠিক</button>
+      <button class="chip" data-filter="wrong">ভুল</button>
+      <button class="chip" data-filter="skip">বাদ পড়া</button>
+    </div>
+    <div id="reviewList" class="q-list"></div>
+  </section>
+
+  <footer class="footer">
+    <p>SSC Chemistry • Class 9–10 • Chapter 10 — NCTB পাঠ্যবই (পৃ. ২৩৩–২৬০) ভিত্তিক প্র্যাকটিস • GitHub Pages-এ হোস্টেড</p>
+  </footer>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
