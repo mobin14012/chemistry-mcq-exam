@@ -91,7 +91,7 @@ let lastResult = null;
    Admin: BACKEND-SETUP-BN.md দেখে Apps Script URL বসাও।
    URL বসানোর পর সব ডিভাইসের first result অনলাইনে সেভ হবে,
    admin অন্য ডিভাইস থেকেও সব রেজাল্ট দেখতে পারবে। */
-const BACKEND_URL = "";
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbwwUnWOH_aj92jYo4xIfS7Xev6kHrg_nzNgRMU1X26J5BiI7_KwFkDrpOjOUrJPIt05/exec";
 const STORE_KEY = "ssc_ch10_official_v1";
 function normName(n){ return (n||"").trim().toLowerCase() || "anonymous"; }
 function displayName(n){ const t=(n||"").trim(); return t || "নাম ছাড়া"; }
